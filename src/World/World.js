@@ -9,6 +9,7 @@ import { Loop } from "./systems/Loop.js";
 import { createPhysics } from "./systems/physics";
 import { createDragControls } from "./systems/dragControls";
 import { createInputControls } from "./systems/inputControls";
+import { createCatKinematics } from "./systems/catKinematics";
 import { Vec3 } from "cannon-es";
 
 //* debuggers
@@ -27,6 +28,7 @@ let isCatDragging = false;
 let catLowestY;
 let catHighestY;
 let inputControls;
+let catKinematics;
 
 // 跑步跳跃参数
 const MOVE_SPEED = 300;
@@ -133,11 +135,18 @@ class World {
     catHighestY = 10;
     console.log("cat y", catHighestY);
 
+    // 初始化猫咪运动学控制器
+    catKinematics = createCatKinematics(cat);
+
     cat.tick = (delta) => {
       cat.mixer.update(delta);
       if (!isCatDragging) {
+        // 只同步位置，不同步旋转（由运动学控制器处理）
         cat.position.set(catBody.position.x, catBody.position.y - 180, catBody.position.z);
-        cat.quaternion.copy(catBody.quaternion);
+
+        // 更新运动学（脊椎弯曲、头部转向、尾巴摆动等）
+        const isOnGround = catBody.position.y <= GROUND_Y_THRESHOLD;
+        catKinematics.update(delta, catBody.velocity, isOnGround);
       }
     };
     catBody.tick = () => {
