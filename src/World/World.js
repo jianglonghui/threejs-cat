@@ -8,6 +8,8 @@ import { createGround } from "./components/ground";
 import { Loop } from "./systems/Loop.js";
 import { createPhysics } from "./systems/physics";
 import { createDragControls } from "./systems/dragControls";
+import { createInputControls } from "./systems/inputControls";
+import { Vec3 } from "cannon-es";
 
 //* debuggers
 import { createHelpers } from "./components/helpers";
@@ -24,6 +26,12 @@ let catDragControls;
 let isCatDragging = false;
 let catLowestY;
 let catHighestY;
+let inputControls;
+
+// 跑步跳跃参数
+const MOVE_SPEED = 2000;
+const JUMP_FORCE = 8000;
+const GROUND_Y_THRESHOLD = 200; // 地面检测阈值
 
 //* debuggers
 let cubeDragControls;
@@ -60,6 +68,9 @@ class World {
     // orbit controls
     controls = createControls(camera, renderer.domElement);
     loop.updatables.push(controls);
+
+    // 键盘输入控制
+    inputControls = createInputControls();
 
     // lights
     const { ambientLight, mainLight } = createLights();
@@ -133,6 +144,34 @@ class World {
       if (isCatDragging) {
         catBody.position.set(cat.position.x, cat.position.y + 180, cat.position.z);
         catBody.quaternion.copy(cat.quaternion);
+        return;
+      }
+
+      // 跑步控制
+      const velocity = catBody.velocity;
+      const keys = inputControls.keys;
+
+      if (keys.forward) {
+        velocity.z = -MOVE_SPEED;
+      } else if (keys.backward) {
+        velocity.z = MOVE_SPEED;
+      } else {
+        velocity.z *= 0.9; // 阻尼
+      }
+
+      if (keys.left) {
+        velocity.x = -MOVE_SPEED;
+      } else if (keys.right) {
+        velocity.x = MOVE_SPEED;
+      } else {
+        velocity.x *= 0.9; // 阻尼
+      }
+
+      // 跳跃控制 - 只有在地面上才能跳
+      const isOnGround = catBody.position.y <= GROUND_Y_THRESHOLD;
+      if (keys.jump && isOnGround) {
+        catBody.applyImpulse(new Vec3(0, JUMP_FORCE, 0), catBody.position);
+        inputControls.keys.jump = false; // 防止连跳
       }
     };
     loop.updatables.push(cat, catBody);
