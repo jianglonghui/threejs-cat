@@ -29,8 +29,8 @@ let catHighestY;
 let inputControls;
 
 // 跑步跳跃参数
-const MOVE_SPEED = 2000;
-const JUMP_FORCE = 8000;
+const MOVE_SPEED = 300;
+const JUMP_FORCE = 5000;
 const GROUND_Y_THRESHOLD = 200; // 地面检测阈值
 
 //* debuggers
