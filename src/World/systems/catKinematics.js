@@ -105,6 +105,9 @@ class CatKinematics {
     const speed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
     const isMoving = speed > 10;
 
+    // 0. 控制动画播放
+    this._updateAnimation(speed, isMoving, isOnGround);
+
     // 1. 计算目标朝向
     if (isMoving) {
       this.targetDirection.set(velocity.x, 0, velocity.z).normalize();
@@ -124,6 +127,23 @@ class CatKinematics {
 
     // 6. 更新尾巴物理
     this._updateTail(delta, velocity, isMoving);
+  }
+
+  /**
+   * 控制动画播放 - 只在移动时播放，速度影响播放速率
+   */
+  _updateAnimation(speed, isMoving, isOnGround) {
+    const action = this.model.action;
+    if (!action) return;
+
+    if (isMoving && isOnGround) {
+      // 移动时播放动画，速度影响播放速率
+      action.paused = false;
+      action.timeScale = MathUtils.clamp(speed / 200, 0.5, 2.0);
+    } else {
+      // 静止或空中时暂停动画
+      action.paused = true;
+    }
   }
 
   /**
